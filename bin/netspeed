@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# Script Name: netspeed
+# Description: Measure network download and upload speeds in Mbit/s and MB/s
+# Description: Custom Bash Scripts Suite Utility
+# Copyright (c) 2026 sanguine6660
+# Licensed under the MIT License
+# ==============================================================================
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}          ${BOLD}${GREEN}⚡ NETSPEED TESTER ⚡${RESET}          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+
+# Function to check and install speedtest-cli and jq
+check_and_install_deps() {
+    local missing_deps=()
+    
+    if ! command -v speedtest &> /dev/null && ! command -v speedtest-cli &> /dev/null; then
+        missing_deps+=("speedtest-cli")
+    fi
+    if ! command -v jq &> /dev/null; then
+        missing_deps+=("jq")
+    fi
+
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        echo -e "${YELLOW}==>${RESET} Required dependencies missing: ${BOLD}${missing_deps[*]}${RESET}"
+        echo -e "${YELLOW}==>${RESET} Detecting package manager to install them automatically..."
+
+        if [ "$EUID" -ne 0 ]; then
+            SUDO="sudo"
+        else
+            SUDO=""
+        fi
+
+        if command -v pacman &> /dev/null; then
+            $SUDO pacman -Sy --noconfirm "${missing_deps[@]}"
+        elif command -v apt-get &> /dev/null; then
+            $SUDO apt-get update && $SUDO apt-get install -y "${missing_deps[@]}"
+        elif command -v dnf &> /dev/null; then
+            $SUDO dnf install -y "${missing_deps[@]}"
+        elif command -v zypper &> /dev/null; then
+            $SUDO zypper install -y "${missing_deps[@]}"
+        elif command -v apk &> /dev/null; then
+            $SUDO apk add --no-cache "${missing_deps[@]}"
+        else
+            echo -e "${RED}Error:${RESET} Could not automatically detect a supported package manager."
+            echo "Please manually install '${missing_deps[*]}' and try again."
+            exit 1
+        fi
+    fi
+}
+
+check_and_install_deps
+
+# Determine correct binary command name
+SPEEDTEST_CMD="speedtest-cli"
+if command -v speedtest &> /dev/null; then
+    SPEEDTEST_CMD="speedtest"
+fi
+
+echo -e "${DIM}Running precise network benchmark (this may take a moment)...${RESET}\n"
+
+# Run speedtest and suppress text output while capturing JSON
+JSON_OUTPUT=$($SPEEDTEST_CMD --json 2>/dev/null)
+
+if [ $? -ne 0 ] || [ -z "$JSON_OUTPUT" ] || ! echo "$JSON_OUTPUT" | jq -e . >/dev/null 2>&1; then
+    echo -e "${RED}Error:${RESET} Failed to execute speed test. Check your network connection."
+    exit 1
+fi
+
+# Parse main metrics and extra metadata using jq
+DL_BPS=$(echo "$JSON_OUTPUT" | jq '.download' | tr ',' '.')
+UL_BPS=$(echo "$JSON_OUTPUT" | jq '.upload' | tr ',' '.')
+PING=$(echo "$JSON_OUTPUT" | jq '.ping' | tr ',' '.')
+ISP=$(echo "$JSON_OUTPUT" | jq -r '.client.isp')
+CLIENT_IP=$(echo "$JSON_OUTPUT" | jq -r '.client.ip')
+SERVER_NAME=$(echo "$JSON_OUTPUT" | jq -r '.server.name')
+SERVER_SPONSOR=$(echo "$JSON_OUTPUT" | jq -r '.server.sponsor')
+SERVER_COUNTRY=$(echo "$JSON_OUTPUT" | jq -r '.server.country')
+
+# Convert bits/sec to Mbit/s and MB/s with locale-safe float math
+DL_MBPS=$(LC_ALL=C echo "scale=2; $DL_BPS / 1000000" | bc)
+DL_MBSEC=$(LC_ALL=C echo "scale=2; $DL_MBPS / 8" | bc)
+
+UL_MBPS=$(LC_ALL=C echo "scale=2; $UL_BPS / 1000000" | bc)
+UL_MBSEC=$(LC_ALL=C echo "scale=2; $UL_MBPS / 8" | bc)
+
+# Format decimals cleanly using LC_ALL=C for printf
+DL_MBSEC=$(LC_ALL=C printf "%.2f" "$DL_MBSEC")
+UL_MBSEC=$(LC_ALL=C printf "%.2f" "$UL_MBSEC")
+PING=$(LC_ALL=C printf "%.3f" "$PING")
+
+# Results Summary Box with Extended Info
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}  ${BOLD}Network Information:${RESET}                      ${CYAN}│${RESET}"
+echo -e "${CYAN}│${RESET}    ISP      : ${DIM}${ISP} (${CLIENT_IP})${RESET}    ${CYAN}│${RESET}"
+echo -e "${CYAN}│${RESET}    Server   : ${DIM}${SERVER_SPONSOR} (${SERVER_NAME}, ${SERVER_COUNTRY})${RESET} ${CYAN}│${RESET}"
+echo -e "${CYAN}├──────────────────────────────────────────────┤${RESET}"
+echo -e "${CYAN}│${RESET}  ${BOLD}Results Summary:${RESET}                           ${CYAN}│${RESET}"
+echo -e "${CYAN}│${RESET}    Ping     : ${BOLD}${YELLOW}${PING} ms${RESET}                         ${CYAN}│${RESET}"
+echo -e "${CYAN}│${RESET}    Download : ${BOLD}${GREEN}${DL_MBPS} Mbit/s${RESET} (${DIM}${DL_MBSEC} MB/s${RESET})          ${CYAN}│${RESET}"
+echo -e "${CYAN}│${RESET}    Upload   : ${BOLD}${GREEN}${UL_MBPS} Mbit/s${RESET} (${DIM}${UL_MBSEC} MB/s${RESET})          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"

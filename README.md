@@ -17,6 +17,7 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 | [`json-lint`](#7-json-lint-json-syntax-validator) | Validates JSON syntax and outputs detailed error messages for malformed data.                        |
 | [`json-fmt`](#8-json-fmt-json-formatter--writer)  | Pretty-prints JSON data with optional in-file saving support.                                        |
 | [`license-gen`](#9-license-gen-license-generator) | Generates standard open-source licenses interactively based on your Git config.                      |
+| [`netspeed`](#10-netspeed-network-speed-tester)   | Measures download/upload speeds in Mbit/s and MB/s with ISP & server info.                           |
 
 ---
 
@@ -29,7 +30,7 @@ This repository comes with automated installer and updater scripts that handle g
 Clone the repository and run the install script (requires `sudo` for global `/usr/local/bin` installation):
 
 ```bash
-git clone [https://github.com/sanguine6660/bash-scripts.git](https://github.com/sanguine6660/bash-scripts.git)
+git clone https://github.com/sanguine6660/bash-scripts.git
 cd bash-scripts
 ./install.sh
 
@@ -147,6 +148,16 @@ cat messy.json | json-fmt
 ```bash
 license-gen
 
+```
+
+### 10. `netspeed` (Network Speed Tester)
+
+- **What it does:** Measures your current network download and upload speeds using accurate `speedtest-cli` metrics, displaying both Mbit/s and MB/s alongside connection metadata.
+- **Features:** Automatically detects and installs missing dependencies (`speedtest-cli` and `jq`), handles local formatting dynamically, and displays a clean ANSI summary box including ISP, server location, and ping.
+- **Usage:**
+
+```bash
+netspeed
 ```
 
 ---
