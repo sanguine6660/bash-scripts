@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# Script Name: license-gen
+# Description: Generate a LICENSE file for your project with customizable author and year
+# Description: Custom Bash Scripts Suite Utility
+# Copyright (c) 2026 sanguine6660
+# Licensed under the MIT License
+# ==============================================================================
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ LICENSE GENERATOR ⚡${RESET}          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+
+# Gather automatic defaults from Git if available
+DEFAULT_YEAR=$(date +%Y)
+DEFAULT_AUTHOR=$(git config user.name 2>/dev/null || echo "Your Name")
+
+echo -e "${DIM}Configuring copyright holder details...${RESET}\n"
+
+# Prompt user for author/organization name
+read -p "$(echo -e "${BLUE}❯${RESET} Enter Copyright Holder / Author Name [${BOLD}$DEFAULT_AUTHOR${RESET}]: ")" AUTHOR
+AUTHOR="${AUTHOR:-$DEFAULT_AUTHOR}"
+
+# Prompt user for year
+read -p "$(echo -e "${BLUE}❯${RESET} Enter Year [${BOLD}$DEFAULT_YEAR${RESET}]: ")" YEAR
+YEAR="${YEAR:-$DEFAULT_YEAR}"
+
+echo -e "\n${YELLOW}Select a license type to generate:${RESET}"
+echo -e "  ${BOLD}1)${RESET} MIT (Permissive, short, and sweet)"
+echo -e "  ${BOLD}2)${RESET} Apache-2.0 (Permissive with patent grant)"
+echo -e "  ${BOLD}3)${RESET} GPL-3.0 (Strong copyleft)"
+echo -e "  ${BOLD}4)${RESET} BSD-3-Clause (Permissive with clause against endorsement)"
+echo ""
+
+read -p "$(echo -e "${BLUE}❯${RESET} Select option (1-4): ")" choice
+
+case "$choice" in
+    1)
+        LICENSE_NAME="MIT"
+        FILENAME="LICENSE"
+        CONTENT="MIT License
+
+Copyright (c) $YEAR $AUTHOR
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."
+        ;;
+    2)
+        LICENSE_NAME="Apache-2.0"
+        FILENAME="LICENSE"
+        CONTENT="Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+Copyright $YEAR $AUTHOR
+
+Licensed under the Apache License, Version 2.0 (the \"License\");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an \"AS IS\" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License."
+        ;;
+    3)
+        LICENSE_NAME="GPL-3.0"
+        FILENAME="LICENSE"
+        CONTENT="GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) $YEAR $AUTHOR
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>."
+        ;;
+    4)
+        LICENSE_NAME="BSD-3-Clause"
+        FILENAME="LICENSE"
+        CONTENT="BSD 3-Clause License
+
+Copyright (c) $YEAR, $AUTHOR
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER AND
+CAUSED. WHETHER ON ANY CLAIM, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+        ;;
+    *)
+        echo -e "${RED}Error:${RESET} Invalid selection."
+        exit 1
+        ;;
+esac
+
+# Check if LICENSE already exists in target directory
+if [ -f "$FILENAME" ]; then
+    echo ""
+    read -p "$(echo -e "${YELLOW}Warning: $FILENAME already exists. Overwrite? [y/N]: ")" overwrite
+    case "$overwrite" in
+        y|Y )
+            echo "$CONTENT" > "$FILENAME"
+            echo -e "${GREEN}==> Successfully generated and overwrote $LICENSE_NAME license!${RESET}"
+            ;;
+        * )
+            echo -e "${DIM}Operation cancelled. License not generated.${RESET}"
+            exit 0
+            ;;
+    esac
+else
+    echo "$CONTENT" > "$FILENAME"
+    echo -e "\n${GREEN}==> Successfully generated $LICENSE_NAME license as '$FILENAME'!${RESET}"
+fi

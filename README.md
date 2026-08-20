@@ -16,6 +16,7 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 | [`git-undo`](#6-git-undo-git-rollback-helper)     | Interactive helper menu to safely unstage, amend, or roll back recent Git commits.                   |
 | [`json-lint`](#7-json-lint-json-syntax-validator) | Validates JSON syntax and outputs detailed error messages for malformed data.                        |
 | [`json-fmt`](#8-json-fmt-json-formatter--writer)  | Pretty-prints JSON data with optional in-file saving support.                                        |
+| [`license-gen`](#9-license-gen-license-generator) | Generates standard open-source licenses interactively based on your Git config.                      |
 
 ---
 
@@ -28,7 +29,7 @@ This repository comes with automated installer and updater scripts that handle g
 Clone the repository and run the install script (requires `sudo` for global `/usr/local/bin` installation):
 
 ```bash
-git clone https://github.com/sanguine6660/bash-scripts.git
+git clone [https://github.com/sanguine6660/bash-scripts.git](https://github.com/sanguine6660/bash-scripts.git)
 cd bash-scripts
 ./install.sh
 
@@ -137,6 +138,17 @@ cat messy.json | json-fmt
 
 ```
 
+### 9. `license-gen` (License Generator)
+
+- **What it does:** Interactively generates standard open-source license files (MIT, Apache-2.0, GPL-3.0, BSD-3-Clause) in the current directory.
+- **Features:** Automatically defaults to your active Git username and current year, with safety prompts before overwriting existing files.
+- **Usage:**
+
+```bash
+license-gen
+
+```
+
 ---
 
 ## 💻 Requirements
@@ -144,3 +156,9 @@ cat messy.json | json-fmt
 - A Unix-like environment (Linux / macOS)
 - Bash (v4+ recommended)
 - Standard core utilities (`curl`, `awk`, `git`, `gpg`, etc.)
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
