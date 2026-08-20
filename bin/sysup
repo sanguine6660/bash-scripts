@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ SYSTEM UPGRADE ⚡${RESET}          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+echo -e "${DIM}  Detecting package manager and updating...${RESET}\n"
+
+# Handle root/sudo privileges
+if [ "$EUID" -ne 0 ]; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detect and run package manager updates
+if command -v pacman &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected Arch-based system (pacman)"
+    
+    # Check for AUR helpers
+    if command -v paru &> /dev/null; then
+        echo -e "${YELLOW}==>${RESET} Updating via paru (AUR)..."
+        paru -Syu
+    elif command -v yay &> /dev/null; then
+        echo -e "${YELLOW}==>${RESET} Updating via yay (AUR)..."
+        yay -Syu
+    else
+        echo -e "${YELLOW}==>${RESET} Updating via pacman..."
+        $SUDO pacman -Syu
+    fi
+
+    # Clean cache and orphans
+    echo -e "${YELLOW}==>${RESET} Cleaning cache & orphans..."
+    if command -v paccache &> /dev/null; then
+        $SUDO paccache -r
+    else
+        $SUDO pacman -Sc --noconfirm
+    fi
+    
+    ORPHANS=$(pacman -Qtdq 2>/dev/null || true)
+    if [ -n "$ORPHANS" ]; then
+        $SUDO pacman -Rns $ORPHANS --noconfirm
+    fi
+
+elif command -v apt-get &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected Debian/Ubuntu-based system (apt)"
+    $SUDO apt-get update
+    $SUDO apt-get upgrade -y
+    $SUDO apt-get autoremove -y
+    $SUDO apt-get clean
+
+elif command -v dnf &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected Fedora/RHEL-based system (dnf)"
+    $SUDO dnf upgrade -y
+    $SUDO dnf autoremove -y
+
+elif command -v zypper &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected openSUSE-based system (zypper)"
+    $SUDO zypper refresh
+    $SUDO zypper update -y
+
+elif command -v apk &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected Alpine Linux (apk)"
+    $SUDO apk update
+    $SUDO apk upgrade
+
+else
+    echo -e "${RED}Error:${RESET} Could not detect a supported package manager."
+    exit 1
+fi
+
+echo -e "\n${GREEN}${BOLD}==> System upgrade and cleanup complete!${RESET}"
