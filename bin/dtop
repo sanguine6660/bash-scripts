@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Handle root/sudo privileges if docker requires it (optional check)
+if [ "$EUID" -ne 0 ] && ! groups | grep -q docker; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Dependency check: Docker and jq
+check_dependencies() {
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}Error:${RESET} Docker is not installed. Please install Docker first."
+        exit 1
+    fi
+
+    if ! command -v jq &> /dev/null; then
+        echo -e "${YELLOW}==>${RESET} ${BOLD}jq${RESET} is required for parsing container details. Installing..."
+        if command -v pacman &> /dev/null; then
+            $SUDO pacman -Sy --noconfirm jq
+        elif command -v apt-get &> /dev/null; then
+            $SUDO apt-get update && $SUDO apt-get install -y jq
+        elif command -v dnf &> /dev/null; then
+            $SUDO dnf install -y jq
+        elif command -v zypper &> /dev/null; then
+            $SUDO zypper install -y jq
+        elif command -v apk &> /dev/null; then
+            $SUDO apk add --no-cache jq
+        else
+            echo -e "${RED}Error:${RESET} Could not install 'jq'. Please install it manually."
+            exit 1
+        fi
+    fi
+}
+
+check_dependencies
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ DOCKER DASHBOARD (dtop) ⚡${RESET}       ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+echo -e "${DIM}  Fetching active containers...${RESET}\n"
+
+# Get list of containers (both running and stopped) using jq for clean formatting
+CONTAINERS_JSON=$($SUDO docker ps -a --format '{"id":"{{.ID}}","names":"{{.Names}}","status":"{{.Status}}","image":"{{.Image}}"}' 2>/dev/null)
+
+if [ -z "$CONTAINERS_JSON" ]; then
+    echo -e "${YELLOW}No Docker containers found.${RESET}"
+    exit 0
+fi
+
+# Build arrays for selection
+mapfile -t C_IDS < <(echo "$CONTAINERS_JSON" | jq -r '.id')
+mapfile -t C_NAMES < <(echo "$CONTAINERS_JSON" | jq -r '.names')
+mapfile -t C_STATUS < <(echo "$CONTAINERS_JSON" | jq -r '.status')
+mapfile -t C_IMAGES < <(echo "$CONTAINERS_JSON" | jq -r '.image')
+
+if [ ${#C_NAMES[@]} -eq 0 ]; then
+    echo -e "${YELLOW}No containers available.${RESET}"
+    exit 0
+fi
+
+# Format options for select menu
+MENU_OPTIONS=()
+for i in "${!C_NAMES[@]}"; do
+    MENU_OPTIONS+=("${C_NAMES[$i]}  ${DIM}(Status: ${C_STATUS[$i]})${RESET}")
+done
+MENU_OPTIONS+=("Quit")
+
+PS3="$(echo -e "${BLUE}❯${RESET} Select a container: ")"
+select opt in "${MENU_OPTIONS[@]}"; do
+    if [ "$opt" == "Quit" ] || [ -z "$opt" ]; then
+        echo -e "\n${DIM}Exiting Docker dashboard. Goodbye!${RESET}"
+        break
+    fi
+
+    # Find the selected index based on choice
+    INDEX=-1
+    for i in "${!MENU_OPTIONS[@]}"; do
+        if [ "${MENU_OPTIONS[$i]}" == "$opt" ]; then
+            INDEX=$i
+            break
+        fi
+    done
+
+    if [ "$INDEX" -ge 0 ] && [ "$INDEX" -lt "${#C_IDS[@]}" ]; then
+        SELECTED_ID="${C_IDS[$INDEX]}"
+        SELECTED_NAME="${C_NAMES[$INDEX]}"
+
+        echo -e "\n${GREEN}==>${RESET} Selected: ${BOLD}${CYAN}$SELECTED_NAME${RESET} ($SELECTED_ID)\n"
+
+        # Action submenu for the selected container
+        PS3_SUB="$(echo -e "${BLUE}❯${RESET} Choose an action for $SELECTED_NAME: ")"
+        select action in "View Live Logs (tail)" "Open Shell (exec)" "Restart Container" "Stop Container" "Start Container" "Back to Container List"; do
+            case "$action" in
+                "View Live Logs (tail)")
+                    echo -e "\n${DIM}Streaming logs for $SELECTED_NAME (Press Ctrl+C to exit)...${RESET}\n"
+                    $SUDO docker logs -f --tail 100 "$SELECTED_ID"
+                    break
+                    ;;
+                "Open Shell (exec)")
+                    echo -e "\n${GREEN}==>${RESET} Opening interactive shell..."
+                    # Try bash first, fallback to sh
+                    if ! $SUDO docker exec -it "$SELECTED_ID" bash 2>/dev/null; then
+                        $SUDO docker exec -it "$SELECTED_ID" sh
+                    fi
+                    break
+                    ;;
+                "Restart Container")
+                    echo -e "\n${YELLOW}==>${RESET} Restarting $SELECTED_NAME..."
+                    $SUDO docker restart "$SELECTED_ID"
+                    echo -e "${GREEN}==> Container restarted!${RESET}"
+                    break
+                    ;;
+                "Stop Container")
+                    echo -e "\n${YELLOW}==>${RESET} Stopping $SELECTED_NAME..."
+                    $SUDO docker stop "$SELECTED_ID"
+                    echo -e "${GREEN}==> Container stopped.${RESET}"
+                    break
+                    ;;
+                "Start Container")
+                    echo -e "\n${YELLOW}==>${RESET} Starting $SELECTED_NAME..."
+                    $SUDO docker start "$SELECTED_ID"
+                    echo -e "${GREEN}==> Container started!${RESET}"
+                    break
+                    ;;
+                "Back to Container List"|*)
+                    break
+                    ;;
+            esac
+        done
+        
+        # Redisplay container list header after action finishes
+        echo -e "\n${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+        echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ DOCKER DASHBOARD (dtop) ⚡${RESET}       ${CYAN}│${RESET}"
+        echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}\n"
+    else
+        echo -e "${RED}Invalid choice. Please try again.${RESET}"
+    fi
+done
