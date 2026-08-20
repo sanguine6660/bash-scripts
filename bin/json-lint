@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ JSON LINT & FORMATTER ⚡${RESET}        ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+
+# Function to check and install 'jq' on any Linux distribution
+check_and_install_jq() {
+    if ! command -v jq &> /dev/null; then
+        echo -e "${YELLOW}==>${RESET} ${BOLD}jq${RESET} is required for JSON validation, but it's not installed."
+        echo -e "${YELLOW}==>${RESET} Detecting package manager to install it automatically..."
+
+        if [ "$EUID" -ne 0 ]; then
+            SUDO="sudo"
+        else
+            SUDO=""
+        fi
+
+        if command -v pacman &> /dev/null; then
+            $SUDO pacman -Sy --noconfirm jq
+        elif command -v apt-get &> /dev/null; then
+            $SUDO apt-get update && $SUDO apt-get install -y jq
+        elif command -v dnf &> /dev/null; then
+            $SUDO dnf install -y jq
+        elif command -v zypper &> /dev/null; then
+            $SUDO zypper install -y jq
+        elif command -v apk &> /dev/null; then
+            $SUDO apk add --no-cache jq
+        else
+            echo -e "${RED}Error:${RESET} Could not automatically detect a supported package manager."
+            echo "Please manually install 'jq' and try again."
+            exit 1
+        fi
+    fi
+}
+
+check_and_install_jq
+
+# Check whether input comes from a file argument or piped stdin
+if [ -n "$1" ]; then
+    TARGET_FILE="$1"
+    if [ ! -f "$TARGET_FILE" ]; then
+        echo -e "${RED}Error:${RESET} File not found at ${DIM}$TARGET_FILE${RESET}"
+        exit 1
+    echo -e "${DIM}Linting file: $TARGET_FILE${RESET}\n"
+    fi
+    INPUT_DATA=$(cat "$TARGET_FILE")
+elif [ ! -t 0 ]; then
+    echo -e "${DIM}Linting piped input data...${RESET}\n"
+    INPUT_DATA=$(cat)
+else
+    echo -e "${RED}Error:${RESET} No input provided."
+    echo -e "Usage: ${BOLD}json-lint <file.json>${RESET} or ${BOLD}cat file.json | json-lint${RESET}"
+    exit 1
+fi
+
+# Validate and pretty-print JSON using jq, capturing errors if invalid
+if ERROR_OUTPUT=$(echo "$INPUT_DATA" | jq . 2>&1 >/dev/null); then
+    echo -e "${GREEN}==> Success: Valid JSON syntax!${RESET}\n"
+    echo -e "${CYAN}--- Formatted Output ---${RESET}"
+    echo "$INPUT_DATA" | jq .
+else
+    echo -e "${RED}${BOLD}==> Error: Invalid JSON syntax!${RESET}\n"
+    echo -e "${YELLOW}Details:${RESET}"
+    echo "$ERROR_OUTPUT"
+    exit 1
+fi
