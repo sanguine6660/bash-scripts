@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# ==============================================================================
+# Script Name: portkill
+# Description: Kill processes listening on a specified port
+# Description: Custom Bash Scripts Suite Utility
+# Copyright (c) 2026 sanguine6660
+# Licensed under the MIT License
+# ==============================================================================
+
 # ANSI Color Codes & Styles
 RESET="\033[0m"
 BOLD="\033[1m"

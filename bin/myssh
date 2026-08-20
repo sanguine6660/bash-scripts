@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# ==============================================================================
+# Script Name: myssh
+# Description: Interactive SSH connection manager using a JSON configuration file
+# Description: Custom Bash Scripts Suite Utility
+# Copyright (c) 2026 sanguine6660
+# Licensed under the MIT License
+# ==============================================================================
+
 CONFIG_FILE="$HOME/.ssh/connections.json"
 
 # ANSI Color Codes & Styles
