@@ -13,6 +13,7 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 | [`portkill`](#3-portkill-port-terminator)         | Quick utility to find and safely terminate processes blocking specific ports.                        |
 | [`dtop`](#4-dtop-docker-dashboard)                | Interactive Docker container dashboard and management menu.                                          |
 | [`git-resign`](#5-git-resign-git-history-re-sign) | Retroactively validates GPG configurations, re-signs, and updates author history for all commits.    |
+| [`git-undo`](#6-git-undo-git-rollback-helper)     | Interactive helper menu to safely unstage, amend, or roll back recent Git commits.                   |
 
 ---
 
@@ -28,6 +29,7 @@ Clone the repository and run the install script (requires `sudo` for global `/us
 git clone https://github.com/sanguine6660/bash-scripts.git
 cd bash-scripts
 ./install.sh
+
 ```
 
 ### Updating Scripts
@@ -36,6 +38,7 @@ To pull the latest changes from your remote repository and automatically re-appl
 
 ```bash
 ./update.sh
+
 ```
 
 ---
@@ -66,6 +69,11 @@ To pull the latest changes from your remote repository and automatically re-appl
 
 - **What it does:** Validates your local Git email, GPG configuration, and secret key ring before rewriting and cryptographically re-signing your entire commit history from the root.
 - **Features:** Automated safety checks, interactive prompt confirmations, fixes author metadata across past commits, and handles seamless force-pushing to your remote branch.
+
+### 6. `git-undo` (Git Rollback Helper)
+
+- **What it does:** Presents an interactive menu allowing you to quickly select common rollback actions like unstaging files, amending the last commit, performing a soft reset, or running a guarded hard reset.
+- **Features:** Built-in repository safety checks, colored warning prompts, and clear status feedback.
 
 ---
 

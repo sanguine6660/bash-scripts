@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ GIT UNDO HELPER ⚡${RESET}           ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+echo -e "${DIM}  Select an undo action...${RESET}\n"
+
+# Ensure we are inside a git repository
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo -e "${RED}Error:${RESET} Not inside a Git repository." >&2
+    exit 1
+fi
+
+PS3="$(echo -e "${BLUE}❯${RESET} Choose an option: ")"
+options=(
+    "Unstage files (Keep changes in working directory)"
+    "Amend last commit (Modify message or add forgotten files)"
+    "Soft reset last commit (Keep changes, uncommit them)"
+    "Hard reset last commit (WARNING: Destroy uncommitted changes)"
+    "Quit"
+)
+
+select opt in "${options[@]}"; do
+    case $REPLY in
+        1)
+            echo -e "\n${YELLOW}==> Unstaging all staged files...${RESET}"
+            git reset
+            echo -e "${GREEN}==> Done! Files are back in your working directory.${RESET}"
+            break
+            ;;
+        2)
+            echo -e "\n${YELLOW}==> Opening editor to amend last commit...${RESET}"
+            git commit --amend
+            echo -e "${GREEN}==> Commit amended successfully!${RESET}"
+            break
+            ;;
+        3)
+            echo -e "\n${YELLOW}==> Soft resetting last commit...${RESET}"
+            git reset --soft HEAD^
+            echo -e "${GREEN}==> Done! Last commit undone, changes kept safely.${RESET}"
+            break
+            ;;
+        4)
+            echo -e "\n${RED}${BOLD}WARNING:${RESET} This will wipe all uncommitted changes!"
+            read -p "$(echo -e "${BLUE}❯${RESET} Are you absolute sure? [y/N]: ")" confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                git reset --hard HEAD^
+                echo -e "${GREEN}==> Hard reset complete.${RESET}"
+            else
+                echo -e "${DIM}Operation cancelled.${RESET}"
+            fi
+            break
+            ;;
+        5)
+            echo -e "\n${DIM}Exiting. No changes made.${RESET}"
+            break
+            ;;
+        *) 
+            echo -e "${RED}Invalid choice. Pick a valid number.${RESET}"
+            ;;
+    esac
+done
