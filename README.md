@@ -6,12 +6,12 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 
 ## 🛠️ Included Tools
 
-| Command                 | Description                                                                                          |
-| :---------------------- | :--------------------------------------------------------------------------------------------------- |
-| [`myssh`](#myssh)       | Interactive SSH connection manager powered by a local JSON config.                                   |
-| [`sysup`](#sysup)       | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
-| [`portkill`](#portkill) | Quick utility to find and safely terminate processes blocking specific ports.                        |
-| [`dtop`](#dtop)         | Interactive Docker container dashboard and management menu.                                          |
+| Command                                         | Description                                                                                          |
+| :---------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| [`myssh`](#1-myssh-ssh-connection-manager)      | Interactive SSH connection manager powered by a local JSON config.                                   |
+| [`sysup`](#2-sysup-system-upgrade--maintenance) | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
+| [`portkill`](#3-portkill-port-terminator)       | Quick utility to find and safely terminate processes blocking specific ports.                        |
+| [`dtop`](#4-dtop-docker-dashboard)              | Interactive Docker container dashboard and management menu.                                          |
 
 ---
 
