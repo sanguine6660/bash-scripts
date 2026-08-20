@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ JSON FORMATTER & LINTER ⚡${RESET}      ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+
+# Function to check and install 'jq' on any Linux distribution
+check_and_install_jq() {
+    if ! command -v jq &> /dev/null; then
+        echo -e "${YELLOW}==>${RESET} ${BOLD}jq${RESET} is required for JSON formatting, but it's not installed."
+        echo -e "${YELLOW}==>${RESET} Detecting package manager to install it automatically..."
+
+        if [ "$EUID" -ne 0 ]; then
+            SUDO="sudo"
+        else
+            SUDO=""
+        fi
+
+        if command -v pacman &> /dev/null; then
+            $SUDO pacman -Sy --noconfirm jq
+        elif command -v apt-get &> /dev/null; then
+            $SUDO apt-get update && $SUDO apt-get install -y jq
+        elif command -v dnf &> /dev/null; then
+            $SUDO dnf install -y jq
+        elif command -v zypper &> /dev/null; then
+            $SUDO zypper install -y zypper
+        elif command -v apk &> /dev/null; then
+            $SUDO apk add --no-cache jq
+        else
+            echo -e "${RED}Error:${RESET} Could not automatically detect a supported package manager."
+            echo "Please manually install 'jq' and try again."
+            exit 1
+        fi
+    fi
+}
+
+check_and_install_jq
+
+# Handle input from file argument or piped stdin
+if [ -n "$1" ]; then
+    TARGET_FILE="$1"
+    if [ ! -f "$TARGET_FILE" ]; then
+        echo -e "${RED}Error:${RESET} File not found at ${DIM}$TARGET_FILE${RESET}"
+        exit 1
+    fi
+    echo -e "${DIM}Formatting file: $TARGET_FILE${RESET}\n"
+    INPUT_DATA=$(cat "$TARGET_FILE")
+elif [ ! -t 0 ]; then
+    echo -e "${DIM}Formatting piped input data...${RESET}\n"
+    INPUT_DATA=$(cat)
+else
+    echo -e "${RED}Error:${RESET} No input provided."
+    echo -e "Usage: ${BOLD}json-fmt <file.json>${RESET} or ${BOLD}cat file.json | json-fmt${RESET}"
+    exit 1
+fi
+
+# Validate and format JSON using jq
+if FORMATTED_OUTPUT=$(echo "$INPUT_DATA" | jq . 2>&1); then
+    echo -e "${GREEN}==> Success: Valid JSON syntax!${RESET}\n"
+    echo -e "${CYAN}--- Formatted Output ---${RESET}"
+    echo "$FORMATTED_OUTPUT"
+    
+    # Optional: If a file was provided, ask if they want to overwrite it in place
+    if [ -n "$TARGET_FILE" ]; then
+        echo ""
+        read -p "$(echo -e "${BLUE}❯${RESET} Do you want to save/overwrite this formatted JSON back to $TARGET_FILE? [y/N]: ")" overwrite
+        case "$overwrite" in
+            y|Y )
+                echo "$FORMATTED_OUTPUT" > "$TARGET_FILE"
+                echo -e "${GREEN}==> File saved successfully!${RESET}"
+                ;;
+            * )
+                echo -e "${DIM}Changes not saved to file.${RESET}"
+                ;;
+        esac
+    fi
+else
+    echo -e "${RED}${BOLD}==> Error: Invalid JSON syntax!${RESET}\n"
+    echo -e "${YELLOW}Details:${RESET}"
+    echo "$FORMATTED_OUTPUT"
+    exit 1
+fi
