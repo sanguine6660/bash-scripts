@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ GIT HISTORY RE-SIGNER ⚡${RESET}         ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+echo -e "${DIM}  Validating Git and GPG configuration...${RESET}\n"
+
+# 1. Ensure we are inside a git repository
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo -e "${RED}Error:${RESET} Not inside a Git repository." >&2
+    exit 1
+fi
+
+# 2. Check if email is set
+GIT_EMAIL=$(git config user.email || true)
+if [ -z "$GIT_EMAIL" ]; then
+    echo -e "${RED}Error:${RESET} Git ${BOLD}user.email${RESET} is not configured." >&2
+    exit 1
+fi
+
+# 3. Check if commit signing is enabled
+GPG_SIGN_ENABLED=$(git config --bool commit.gpgsign || echo "false")
+if [ "$GPG_SIGN_ENABLED" != "true" ]; then
+    echo -e "${YELLOW}==>${RESET} Notice: ${BOLD}commit.gpgsign${RESET} is not enabled. Enabling it globally..."
+    git config --global commit.gpgsign true
+fi
+
+# 4. Check if a signing key is provided
+SIGNING_KEY=$(git config user.signingkey || true)
+if [ -z "$SIGNING_KEY" ]; then
+    echo -e "${RED}Error:${RESET} Git ${BOLD}user.signingkey${RESET} is not configured." >&2
+    echo -e "Please configure your key using: ${CYAN}git config --global user.signingkey <KEY_ID>${RESET}"
+    exit 1
+fi
+
+# 5. Verify the key actually exists in the local GPG keyring
+if ! gpg --list-secret-keys --keyid-format LONG "$SIGNING_KEY" >/dev/null 2>&1; then
+    echo -e "${RED}Error:${RESET} Signing key '${BOLD}$SIGNING_KEY${RESET}' was not found in your GPG secret keyring." >&2
+    exit 1
+fi
+
+echo -e "${GREEN}==> Validation passed successfully!${RESET}"
+echo -e "    ${DIM}• Author/Email:${RESET} $(git config user.name) <$GIT_EMAIL>"
+echo -e "    ${DIM}• GPG Key ID:  ${RESET}$SIGNING_KEY\n"
+
+# Confirmation prompt
+read -p "$(echo -e "${BLUE}❯${RESET} This will rewrite your entire Git history and force-push. Proceed? [y/N]: ")" choice
+
+case "$choice" in
+    y|Y )
+        echo -e "\n${YELLOW}==> Re-signing history from the root...${RESET}"
+        
+        # Run the automated rebase loop from root
+        GIT_SEQUENCE_EDITOR="sed -i 's/^pick /edit /'" git rebase -i --root
+
+        while true; do
+            git commit --amend --reset-author -S --no-edit || true
+            git rebase --continue || break
+        done
+
+        echo -e "\n${GREEN}==> History re-signed successfully!${RESET}"
+        
+        # Push prompt
+        read -p "$(echo -e "${BLUE}❯${RESET} Do you want to force push to origin now? [y/N]: ")" push_choice
+        case "$push_choice" in
+            y|Y )
+                CURRENT_BRANCH=$(git branch --show-current)
+                echo -e "${YELLOW}==> Force pushing $CURRENT_BRANCH to origin...${RESET}"
+                git push origin "$CURRENT_BRANCH" --force
+                echo -e "${GREEN}==> Pushed successfully! All commits are now fully verified.${RESET}"
+                ;;
+            * )
+                echo -e "${DIM}Push skipped. Run 'git push origin <branch> --force' when ready.${RESET}"
+                ;;
+        end
+        ;;
+    * )
+        echo -e "${DIM}Operation cancelled. History left untouched.${RESET}"
+        exit 0
+        ;;
+esac

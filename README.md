@@ -6,12 +6,13 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 
 ## 🛠️ Included Tools
 
-| Command                                         | Description                                                                                          |
-| :---------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| [`myssh`](#1-myssh-ssh-connection-manager)      | Interactive SSH connection manager powered by a local JSON config.                                   |
-| [`sysup`](#2-sysup-system-upgrade--maintenance) | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
-| [`portkill`](#3-portkill-port-terminator)       | Quick utility to find and safely terminate processes blocking specific ports.                        |
-| [`dtop`](#4-dtop-docker-dashboard)              | Interactive Docker container dashboard and management menu.                                          |
+| Command                                           | Description                                                                                          |
+| :------------------------------------------------ | :--------------------------------------------------------------------------------------------------- |
+| [`myssh`](#1-myssh-ssh-connection-manager)        | Interactive SSH connection manager powered by a local JSON config.                                   |
+| [`sysup`](#2-sysup-system-upgrade--maintenance)   | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
+| [`portkill`](#3-portkill-port-terminator)         | Quick utility to find and safely terminate processes blocking specific ports.                        |
+| [`dtop`](#4-dtop-docker-dashboard)                | Interactive Docker container dashboard and management menu.                                          |
+| [`git-resign`](#5-git-resign-git-history-re-sign) | Retroactively validates GPG configurations, re-signs, and updates author history for all commits.    |
 
 ---
 
@@ -24,7 +25,7 @@ This repository comes with automated installer and updater scripts that handle g
 Clone the repository and run the install script (requires `sudo` for global `/usr/local/bin` installation):
 
 ```bash
-git clone https://github.com/sanguine6660/bash-scripts
+git clone https://github.com/sanguine6660/bash-scripts.git
 cd bash-scripts
 ./install.sh
 ```
@@ -61,10 +62,15 @@ To pull the latest changes from your remote repository and automatically re-appl
 - **What it does:** Provides an interactive menu of all running and stopped Docker containers.
 - **Features:** Allows you to stream live logs (`tail`), open an interactive shell (`exec`), restart, stop, or start containers on the fly.
 
+### 5. `git-resign` (Git History Re-Sign)
+
+- **What it does:** Validates your local Git email, GPG configuration, and secret key ring before rewriting and cryptographically re-signing your entire commit history from the root.
+- **Features:** Automated safety checks, interactive prompt confirmations, fixes author metadata across past commits, and handles seamless force-pushing to your remote branch.
+
 ---
 
 ## 💻 Requirements
 
 - A Unix-like environment (Linux / macOS)
 - Bash (v4+ recommended)
-- Standard core utilities (`curl`, `awk`, etc.)
+- Standard core utilities (`curl`, `awk`, `git`, `gpg`, etc.)
