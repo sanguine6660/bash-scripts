@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Check if a port argument was provided
+if [ -z "$1" ]; then
+    echo -e "${RED}Error:${RESET} No port specified."
+    echo -e "Usage: ${BOLD}portkill <port_number>${RESET}"
+    exit 1
+fi
+
+PORT="$1"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}         ${BOLD}${GREEN}⚡ PORT KILLER (:$PORT) ⚡${RESET}          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+
+# Handle root/sudo privileges
+if [ "$EUID" -ne 0 ]; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Ensure diagnostic tools (lsof/fuser) are available
+check_dependencies() {
+    if ! command -v lsof &> /dev/null && ! command -v fuser &> /dev/null; then
+        echo -e "${YELLOW}==>${RESET} Missing required tools ('lsof' or 'fuser'). Detecting package manager..."
+        
+        if command -v pacman &> /dev/null; then
+            $SUDO pacman -Sy --noconfirm lsof
+        elif command -v apt-get &> /dev/null; then
+            $SUDO apt-get update && $SUDO apt-get install -y lsof
+        elif command -v dnf &> /dev/null; then
+            $SUDO dnf install -y lsof
+        elif command -v zypper &> /dev/null; then
+            $SUDO zypper install -y lsof
+        elif command -v apk &> /dev/null; then
+            $SUDO apk add --no-cache lsof
+        else
+            echo -e "${RED}Error:${RESET} Could not automatically install 'lsof'. Please install it manually."
+            exit 1
+        fi
+    fi
+}
+
+check_dependencies
+
+# Find the PID using the port
+echo -e "${DIM}Scanning port $PORT for active processes...${RESET}\n"
+
+if command -v lsof &> /dev/null; then
+    PID=$(sudo lsof -t -i :"$PORT" 2>/dev/null)
+    PROC_NAME=$(sudo lsof -i :"$PORT" -sTCP:LISTEN 2>/dev/null | awk 'NR>1 {print $1, "(PID: " $2 ")"}' | head -n 1)
+else
+    # Fallback to fuser if lsof isn't used
+    PID=$(sudo fuser "$PORT"/tcp 2>/dev/null)
+    PROC_NAME="Process ID(s): $PID"
+fi
+
+if [ -z "$PID" ]; then
+    echo -e "${GREEN}==> No process is currently running on port $PORT.${RESET}"
+    exit 0
+fi
+
+echo -e "${YELLOW}Found active process:${RESET} $PROC_NAME"
+echo -e ""
+read -p "$(echo -e "${BLUE}❯${RESET} Do you want to kill this process? [y/N]: ")" choice
+
+case "$choice" in
+    y|Y )
+        echo -e "${YELLOW}==> Terminating process(es)...${RESET}"
+        sudo kill -9 $PID
+        echo -e "${GREEN}==> Port $PORT has been freed successfully!${RESET}"
+        ;;
+    * )
+        echo -e "${DIM}Operation cancelled. Process left untouched.${RESET}"
+        ;;
+esac
