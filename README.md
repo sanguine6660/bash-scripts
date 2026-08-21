@@ -6,20 +6,21 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 
 ## 🛠️ Included Tools
 
-| Command                                                | Description                                                                                          |
-| :----------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| [`myssh`](#1-myssh-ssh-connection-manager)             | Interactive SSH connection manager powered by a local JSON config.                                   |
-| [`sysup`](#2-sysup-system-upgrade--maintenance)        | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
-| [`portkill`](#3-portkill-port-terminator)              | Quick utility to find and safely terminate processes blocking specific ports.                        |
-| [`dtop`](#4-dtop-docker-dashboard)                     | Interactive Docker container dashboard and management menu.                                          |
-| [`git-resign`](#5-git-resign-git-history-re-sign)      | Retroactively validates GPG configurations, re-signs, and updates author history for all commits.    |
-| [`git-undo`](#6-git-undo-git-rollback-helper)          | Interactive helper menu to safely unstage, amend, or roll back recent Git commits.                   |
-| [`json-lint`](#7-json-lint-json-syntax-validator)      | Validates JSON syntax and outputs detailed error messages for malformed data.                        |
-| [`json-fmt`](#8-json-fmt-json-formatter--writer)       | Pretty-prints JSON data with optional in-file saving support.                                        |
-| [`license-gen`](#9-license-gen-license-generator)      | Generates standard open-source licenses interactively based on your Git config.                      |
-| [`netspeed`](#10-netspeed-network-speed-tester)        | Measures download/upload speeds in Mbit/s and MB/s with ISP & server info.                           |
-| [`dns-flush`](#11-dns-flush-dns-cache-flusher)         | Automatically detects Linux network resolvers and flushes local DNS caches.                          |
-| [`alias-gen`](#12-alias-gen-terminal-shortcut-builder) | Interactively creates and saves custom shell aliases for Bash, Zsh, or Fish.                         |
+| Command                                                  | Description                                                                                          |
+| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| [`myssh`](#1-myssh-ssh-connection-manager)               | Interactive SSH connection manager powered by a local JSON config.                                   |
+| [`sysup`](#2-sysup-system-upgrade--maintenance)          | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
+| [`portkill`](#3-portkill-port-terminator)                | Quick utility to find and safely terminate processes blocking specific ports.                        |
+| [`dtop`](#4-dtop-docker-dashboard)                       | Interactive Docker container dashboard and management menu.                                          |
+| [`git-resign`](#5-git-resign-git-history-re-sign)        | Retroactively validates GPG configurations, re-signs, and updates author history for all commits.    |
+| [`git-undo`](#6-git-undo-git-rollback-helper)            | Interactive helper menu to safely unstage, amend, or roll back recent Git commits.                   |
+| [`json-lint`](#7-json-lint-json-syntax-validator)        | Validates JSON syntax and outputs detailed error messages for malformed data.                        |
+| [`json-fmt`](#8-json-fmt-json-formatter--writer)         | Pretty-prints JSON data with optional in-file saving support.                                        |
+| [`license-gen`](#9-license-gen-license-generator)        | Generates standard open-source licenses interactively based on your Git config.                      |
+| [`netspeed`](#10-netspeed-network-speed-tester)          | Measures download/upload speeds in Mbit/s and MB/s with ISP & server info.                           |
+| [`dns-flush`](#11-dns-flush-dns-cache-flusher)           | Automatically detects Linux network resolvers and flushes local DNS caches.                          |
+| [`alias-gen`](#12-alias-gen-terminal-shortcut-builder)   | Interactively creates and saves custom shell aliases for Bash, Zsh, or Fish.                         |
+| [`port-inspect`](#13-port-inspect-active-port-inspector) | Lists all active listening ports mapped to their protocol, PID, and application.                     |
 
 ---
 
@@ -182,6 +183,17 @@ dns-flush
 
 ```bash
 alias-gen
+
+```
+
+### 13. `port-inspect` (Active Port Inspector)
+
+- **What it does:** Scans system network sockets to display all active listening ports, protocols, associated PIDs, and process/user ownership in a clean table.
+- **Features:** Automatically utilizes `ss` (or falls back to `netstat`), parses process metadata, and aligns seamlessly with `portkill`.
+- **Usage:**
+
+```bash
+port-inspect
 
 ```
 

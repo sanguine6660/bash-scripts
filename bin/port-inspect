@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# Script Name: port-inspect
+# Description: List all active listening ports with PID, protocol, and process names
+# Description: Custom Bash Scripts Suite Utility
+# Copyright (c) 2026 sanguine6660
+# Licensed under the MIT License
+# ==============================================================================
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}          ${BOLD}${GREEN}⚡ ACTIVE PORT INSPECTOR ⚡${RESET}          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+echo -e "${DIM}  Scanning listening network ports...${RESET}\n"
+
+# Check for required tools (prefer ss over netstat)
+if command -v ss &> /dev/null; then
+    PORT_TOOL="ss"
+elif command -v netstat &> /dev/null; then
+    PORT_TOOL="netstat"
+else
+    echo -e "${RED}Error:${RESET} Neither 'ss' nor 'netstat' commands found. Please install iproute2 or net-tools."
+    exit 1
+fi
+
+# Print Table Header
+echo -e "${CYAN}┌────────┬──────────┬──────────┬───────┬───────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET} ${BOLD}PORT${RESET}   ${CYAN}│${RESET} ${BOLD}PROTO${RESET}    ${CYAN}│${RESET} ${BOLD}STATE${RESET}    ${CYAN}│${RESET} ${BOLD}PID${RESET}   ${CYAN}│${RESET} ${BOLD}PROCESS / USER${RESET}        ${CYAN}│${RESET}"
+echo -e "${CYAN}├────────┼──────────┼──────────┼───────┼───────────────────────┤${RESET}"
+
+COUNT=0
+
+if [ "$PORT_TOOL" = "ss" ]; then
+    # Parse using 'ss -tulpn'
+    # Format sample output line: tcp LISTEN 0 128 0.0.0.0:3000 0.0.0.0:* users:(("node",pid=15482,fd=19))
+    while read -r line; do
+        PROTO=$(echo "$line" | awk '{print $1}')
+        STATE=$(echo "$line" | awk '{print $2}')
+        LOCAL_ADDR=$(echo "$line" | awk '{print $5}')
+        PROCESS_INFO=$(echo "$line" | awk '{$1=$2=$3=$4=$5=""; print $0}' | xargs)
+
+        # Extract port from local address (handles IPv4 and [IPv6]:port)
+        PORT=$(echo "$LOCAL_ADDR" | awk -F: '{print $NF}')
+
+        # Clean up process info & extract PID/Name if available
+        PID="-"
+        PROC_NAME="-"
+        if [[ "$PROCESS_INFO" =~ pid=([0-9]+) ]]; then
+            PID="${BASH_REMATCH[1]}"
+        fi
+        if [[ "$PROCESS_INFO" =~ \"([^\"]+)\" ]]; then
+            PROC_NAME="${BASH_REMATCH[1]}"
+        fi
+
+        # Get user running the PID if possible
+        USER_NAME=""
+        if [ "$PID" != "-" ] && command -v ps &> /dev/null; then
+            USER_NAME=$(ps -o user= -p "$PID" 2>/dev/null | xargs)
+        fi
+
+        if [ -n "$USER_NAME" ]; then
+            DISPLAY_PROC="${PROC_NAME} (${USER_NAME})"
+        else
+            DISPLAY_PROC="${PROC_NAME}"
+        fi
+
+        # Format table row with fixed padding
+        printf "${CYAN}│${RESET} %-6s ${CYAN}│${RESET} %-8s ${CYAN}│${RESET} %-8s ${CYAN}│${RESET} %-5s ${CYAN}│${RESET} %-21s ${CYAN}│${RESET}\n" \
+            "$PORT" "$PROTO" "$STATE" "$PID" "$DISPLAY_PROC"
+        
+        ((COUNT++))
+    done < <(ss -tulpn 2>/dev/null | tail -n +2)
+fi
+
+echo -e "${CYAN}└────────┴──────────┴──────────┴───────┴───────────────────────┘${RESET}"
+echo -e "${GREEN}${BOLD}==> Scan complete!${RESET} Found ${BOLD}${COUNT}${COUNT:+ active listening ports.}"
