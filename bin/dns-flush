@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# Script Name: dns-flush
+# Description: Automatically detect Linux resolver and flush local DNS caches
+# Description: Custom Bash Scripts Suite Utility
+# Copyright (c) 2026 sanguine6660
+# Licensed under the MIT License
+# ==============================================================================
+
+# ANSI Color Codes & Styles
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+BLUE="\033[34m"
+
+# Modern Styled Header
+clear
+echo -e "${CYAN}┌──────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}│${RESET}          ${BOLD}${GREEN}⚡ DNS CACHE FLUSHER ⚡${RESET}          ${CYAN}│${RESET}"
+echo -e "${CYAN}└──────────────────────────────────────────────┘${RESET}"
+echo -e "${DIM}  Detecting network resolver and flushing cache...${RESET}\n"
+
+# Handle root/sudo privileges
+if [ "$EUID" -ne 0 ]; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+FLUSHED=false
+
+# 1. Linux systemd-resolved (Modern systemd distributions)
+if command -v resolvectl &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected systemd-resolved (resolvectl)..."
+    $SUDO resolvectl flush-caches
+    FLUSHED=true
+elif command -v systemd-resolve &> /dev/null; then
+    echo -e "${YELLOW}==>${RESET} Detected systemd-resolved (systemd-resolve)..."
+    $SUDO systemd-resolve --flush-caches
+    FLUSHED=true
+fi
+
+# 2. NetworkManager DNS Reload
+if command -v nmcli &> /dev/null; then
+    if systemctl is-active --quiet NetworkManager 2>/dev/null; then
+        echo -e "${YELLOW}==>${RESET} Reloading NetworkManager DNS runtime configuration..."
+        $SUDO nmcli general reload dns-rc
+        FLUSHED=true
+    fi
+fi
+
+# 3. NSCD (Name Service Caching Daemon)
+if command -v nscd &> /dev/null; then
+    if systemctl is-active --quiet nscd 2>/dev/null; then
+        echo -e "${YELLOW}==>${RESET} Restarting nscd service..."
+        $SUDO systemctl restart nscd
+        FLUSHED=true
+    fi
+fi
+
+# 4. Dnsmasq Local Resolver
+if command -v dnsmasq &> /dev/null; then
+    if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+        echo -e "${YELLOW}==>${RESET} Restarting dnsmasq service..."
+        $SUDO systemctl restart dnsmasq
+        FLUSHED=true
+    fi
+fi
+
+# Final status feedback
+if [ "$FLUSHED" = true ]; then
+    echo -e "\n${GREEN}${BOLD}==> DNS cache successfully flushed across active resolvers!${RESET}"
+else
+    echo -e "${RED}Error:${RESET} Could not detect a known active DNS caching service on this system."
+    exit 1
+fi

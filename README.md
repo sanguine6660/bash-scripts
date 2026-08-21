@@ -18,6 +18,7 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 | [`json-fmt`](#8-json-fmt-json-formatter--writer)  | Pretty-prints JSON data with optional in-file saving support.                                        |
 | [`license-gen`](#9-license-gen-license-generator) | Generates standard open-source licenses interactively based on your Git config.                      |
 | [`netspeed`](#10-netspeed-network-speed-tester)   | Measures download/upload speeds in Mbit/s and MB/s with ISP & server info.                           |
+| [`dns-flush`](#11-dns-flush-dns-cache-flusher)    | Automatically detects Linux network resolvers and flushes local DNS caches.                          |
 
 ---
 
@@ -160,6 +161,15 @@ license-gen
 netspeed
 ```
 
+### 11. `dns-flush` (DNS Cache Flusher)
+
+- **What it does:** Automatically detects active Linux network resolvers/caching daemons and flushes or reloads their DNS cache.
+- **Features:** Supports `resolvectl`, `systemd-resolve`, NetworkManager (`dns-rc`), `nscd`, and `dnsmasq` with automatic fallback.
+- **Usage:**
+
+```bash
+dns-flush
+
 ---
 
 ## 💻 Requirements
@@ -173,3 +183,4 @@ netspeed
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+```
