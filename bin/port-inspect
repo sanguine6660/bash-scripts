@@ -35,6 +35,13 @@ else
     exit 1
 fi
 
+# Handle root/sudo privileges for full process visibility
+if [ "$EUID" -ne 0 ]; then
+    SS_CMD="sudo ss"
+else
+    SS_CMD="ss"
+fi
+
 # Print Table Header
 echo -e "${CYAN}┌────────┬──────────┬──────────┬───────┬───────────────────────┐${RESET}"
 echo -e "${CYAN}│${RESET} ${BOLD}PORT${RESET}   ${CYAN}│${RESET} ${BOLD}PROTO${RESET}    ${CYAN}│${RESET} ${BOLD}STATE${RESET}    ${CYAN}│${RESET} ${BOLD}PID${RESET}   ${CYAN}│${RESET} ${BOLD}PROCESS / USER${RESET}        ${CYAN}│${RESET}"
@@ -43,18 +50,21 @@ echo -e "${CYAN}├────────┼──────────┼�
 COUNT=0
 
 if [ "$PORT_TOOL" = "ss" ]; then
-    # Parse using 'ss -tulpn'
-    # Format sample output line: tcp LISTEN 0 128 0.0.0.0:3000 0.0.0.0:* users:(("node",pid=15482,fd=19))
+    # Run scan strictly for listening sockets, parsing output cleanly
     while read -r line; do
         PROTO=$(echo "$line" | awk '{print $1}')
         STATE=$(echo "$line" | awk '{print $2}')
         LOCAL_ADDR=$(echo "$line" | awk '{print $5}')
+        
         PROCESS_INFO=$(echo "$line" | awk '{$1=$2=$3=$4=$5=""; print $0}' | xargs)
 
-        # Extract port from local address (handles IPv4 and [IPv6]:port)
+        # Extract port from local address
         PORT=$(echo "$LOCAL_ADDR" | awk -F: '{print $NF}')
 
-        # Clean up process info & extract PID/Name if available
+        # Skip if port is empty or not a number
+        [[ ! "$PORT" =~ ^[0-9]+$ ]] && continue
+
+        # Extract PID and Process Name from ss output if available
         PID="-"
         PROC_NAME="-"
         if [[ "$PROCESS_INFO" =~ pid=([0-9]+) ]]; then
@@ -64,16 +74,23 @@ if [ "$PORT_TOOL" = "ss" ]; then
             PROC_NAME="${BASH_REMATCH[1]}"
         fi
 
-        # Get user running the PID if possible
+        # Fallback to ps to get command name and user if ss missed it
         USER_NAME=""
         if [ "$PID" != "-" ] && command -v ps &> /dev/null; then
             USER_NAME=$(ps -o user= -p "$PID" 2>/dev/null | xargs)
+            if [ "$PROC_NAME" = "-" ]; then
+                PROC_NAME=$(ps -o comm= -p "$PID" 2>/dev/null | xargs)
+            fi
         fi
 
-        if [ -n "$USER_NAME" ]; then
+        if [ -n "$USER_NAME" ] && [ "$PROC_NAME" != "-" ]; then
             DISPLAY_PROC="${PROC_NAME} (${USER_NAME})"
-        else
+        elif [ "$PROC_NAME" != "-" ]; then
             DISPLAY_PROC="${PROC_NAME}"
+        elif [ "$PID" != "-" ]; then
+            DISPLAY_PROC="PID ${PID}"
+        else
+            DISPLAY_PROC="-"
         fi
 
         # Format table row with fixed padding
@@ -81,8 +98,8 @@ if [ "$PORT_TOOL" = "ss" ]; then
             "$PORT" "$PROTO" "$STATE" "$PID" "$DISPLAY_PROC"
         
         ((COUNT++))
-    done < <(ss -tulpn 2>/dev/null | tail -n +2)
+    done < <($SS_CMD -tulpn 2>/dev/null | grep LISTEN)
 fi
 
 echo -e "${CYAN}└────────┴──────────┴──────────┴───────┴───────────────────────┘${RESET}"
-echo -e "${GREEN}${BOLD}==> Scan complete!${RESET} Found ${BOLD}${COUNT}${COUNT:+ active listening ports.}"
+echo -e "${GREEN}${BOLD}==> Scan complete!${RESET} Found ${BOLD}${COUNT}${RESET} active listening ports."

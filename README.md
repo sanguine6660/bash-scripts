@@ -7,7 +7,7 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 ## 🛠️ Included Tools
 
 | Command                                                  | Description                                                                                          |
-| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | --- |
 | [`myssh`](#1-myssh-ssh-connection-manager)               | Interactive SSH connection manager powered by a local JSON config.                                   |
 | [`sysup`](#2-sysup-system-upgrade--maintenance)          | Cross-distribution system upgrade and cleanup tool (Arch/CachyOS, Debian, Fedora, openSUSE, Alpine). |
 | [`portkill`](#3-portkill-port-terminator)                | Quick utility to find and safely terminate processes blocking specific ports.                        |
@@ -20,7 +20,7 @@ A personal collection of modern, lightweight, and cross-distribution terminal ut
 | [`netspeed`](#10-netspeed-network-speed-tester)          | Measures download/upload speeds in Mbit/s and MB/s with ISP & server info.                           |
 | [`dns-flush`](#11-dns-flush-dns-cache-flusher)           | Automatically detects Linux network resolvers and flushes local DNS caches.                          |
 | [`alias-gen`](#12-alias-gen-terminal-shortcut-builder)   | Interactively creates and saves custom shell aliases for Bash, Zsh, or Fish.                         |
-| [`port-inspect`](#13-port-inspect-active-port-inspector) | Lists all active listening ports mapped to their protocol, PID, and application.                     |
+| [`port-inspect`](#14-port-inspect-active-port-inspector) | Scans and lists all active listening ports mapped to their protocol, PID, and process.               |     |
 
 ---
 
@@ -188,8 +188,8 @@ alias-gen
 
 ### 13. `port-inspect` (Active Port Inspector)
 
-- **What it does:** Scans system network sockets to display all active listening ports, protocols, associated PIDs, and process/user ownership in a clean table.
-- **Features:** Automatically utilizes `ss` (or falls back to `netstat`), parses process metadata, and aligns seamlessly with `portkill`.
+- **What it does:** Scans system network sockets to display all active listening ports, protocols, associated PIDs, and process/user ownership in a clean, aligned table.
+- **Features:** Automatically utilizes `ss` with fallback user/process resolution via `ps`, acting as an ideal companion utility to `portkill`.
 - **Usage:**
 
 ```bash
